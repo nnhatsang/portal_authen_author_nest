@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model administrator {
+  ID        Int      @id @default(autoincrement())
+  Full_Name String?  @db.VarChar(100)
+  Email     String?  @db.VarChar(100)
+  IsDeleted Boolean? @default(false)
+  User_ID   Int?
+  user      user?    @relation(fields: [User_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "administrator_ibfk_1")
+
+  @@index([User_ID], map: "User_ID")
+}
+
+model candidate {
+  ID                Int                 @id @default(autoincrement())
+  Full_Name         String?             @db.VarChar(100)
+  Email             String?             @unique(map: "Email_UNIQUE") @db.VarChar(100)
+  DateOfBirth       DateTime?           @db.Date
+  City_ID           Int?
+  Avatar            String?             @db.VarChar(300)
+  Description       String?             @db.VarChar(500)
+  Phone             String?             @db.VarChar(10)
+  Degree            String?             @db.VarChar(45)
+  Major             String?             @db.VarChar(45)
+  Sex               String?             @db.VarChar(45)
+  User_ID           Int?
+  IsDeleted         Boolean?            @default(false)
+  user              user?               @relation(fields: [User_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_ibfk_1")
+  city              city?               @relation(fields: [City_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_ibfk_2")
+  candidate_company candidate_company[]
+  candidate_job     candidate_job[]
+  comment           comment[]
+  curriculum_vitae  curriculum_vitae[]
+
+  @@index([City_ID], map: "City_ID")
+  @@index([User_ID], map: "User_ID")
+}
+
+model candidate_company {
+  ID           Int        @id @default(autoincrement())
+  Candidate_ID Int?
+  Company_ID   Int?
+  candidate    candidate? @relation(fields: [Candidate_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_company_ibfk_1")
+  company      company?   @relation(fields: [Company_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_company_ibfk_2")
+
+  @@index([Candidate_ID], map: "Candidate_ID")
+  @@index([Company_ID], map: "Company_ID")
+}
+
+model candidate_job {
+  ID               Int               @id @default(autoincrement())
+  Candidate_ID     Int?
+  Job_ID           Int?
+  CV_ID            Int?
+  AppliedDate      DateTime?         @db.Date
+  IsLiked          Boolean?          @default(false)
+  IsApplied        Boolean?          @default(false)
+  candidate        candidate?        @relation(fields: [Candidate_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_job_ibfk_1")
+  job              job?              @relation(fields: [Job_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_job_ibfk_2")
+  curriculum_vitae curriculum_vitae? @relation(fields: [CV_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "candidate_job_ibfk_3")
+
+  @@index([CV_ID], map: "CV_ID")
+  @@index([Candidate_ID], map: "Candidate_ID")
+  @@index([Job_ID], map: "Job_ID")
+}
+
+model city {
+  ID        Int         @id @default(autoincrement())
+  CityName  String?     @db.VarChar(45)
+  candidate candidate[]
+  company   company[]
+  job       job[]
+}
+
+model comment {
+  ID           Int        @id @default(autoincrement())
+  Candidate_ID Int?
+  Company_ID   Int?
+  Rating       Int?
+  Assessment   String?    @db.VarChar(300)
+  CreatedDate  DateTime?  @db.Date
+  candidate    candidate? @relation(fields: [Candidate_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_1")
+  company      company?   @relation(fields: [Company_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "comment_ibfk_2")
+
+  @@index([Candidate_ID], map: "Candidate_ID")
+  @@index([Company_ID], map: "Company_ID")
+}
+
+model company {
+  ID                Int                 @id @default(autoincrement())
+  Name              String              @db.VarChar(100)
+  Address           String              @db.VarChar(100)
+  City_ID           Int?
+  Avatar            String              @db.VarChar(300)
+  Description       String?             @db.VarChar(1000)
+  Email             String              @db.VarChar(45)
+  Ischecked         Boolean             @default(false)
+  IsDeleted         Boolean             @default(false)
+  User_ID           Int
+  candidate_company candidate_company[]
+  comment           comment[]
+  user              user                @relation(fields: [User_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "company_ibfk_1")
+  city              city?               @relation(fields: [City_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "company_ibfk_2")
+  job               job[]
+
+  @@index([City_ID], map: "City_ID")
+  @@index([User_ID], map: "User_ID")
+}
+
+model curriculum_vitae {
+  ID               Int             @id @default(autoincrement())
+  CareerGoals      String?         @db.VarChar(500)
+  DegreeDetail     String?         @db.VarChar(500)
+  ExperienceDetail String?         @db.VarChar(500)
+  Skill            String?         @db.VarChar(100)
+  ForeignLanguage  String?         @db.VarChar(200)
+  Candidate_ID     Int?
+  CV_Link          String?         @db.VarChar(100)
+  Is_Deleted       Boolean?        @default(false)
+  candidate_job    candidate_job[]
+  candidate        candidate?      @relation(fields: [Candidate_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "curriculum_vitae_ibfk_1")
+
+  @@index([Candidate_ID], map: "Candidate_ID")
+}
+
+model job {
+  ID                 Int             @id @default(autoincrement())
+  Company_ID         Int?
+  Name               String?         @db.VarChar(100)
+  Description        String?         @db.VarChar(1000)
+  SalaryFrom         Decimal?        @db.Decimal(20, 0)
+  SalaryTo           Decimal?        @db.Decimal(20, 0)
+  AgeFrom            Int?
+  AgeTo              Int?
+  EndDate            DateTime?       @db.Date
+  CreateDate         DateTime?       @db.Date
+  Quantity           Int?
+  IsChecked          Boolean?        @default(false)
+  DegreeRequired     String          @db.VarChar(200)
+  IsDeleted          Boolean?        @default(false)
+  SexRequired        String?         @db.VarChar(100)
+  ProbationaryPriod  Int?
+  Benefit            String?         @db.VarChar(500)
+  Position           String?         @db.VarChar(100)
+  Type               String?         @db.VarChar(100)
+  City_ID            Int?
+  Address            String?         @db.VarChar(200)
+  ExperienceRequired Int?
+  JobRequired        String?         @db.VarChar(500)
+  candidate_job      candidate_job[]
+  company            company?        @relation(fields: [Company_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "job_ibfk_1")
+  city               city?           @relation(fields: [City_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "job_ibfk_2")
+  job_major          job_major[]
+
+  @@index([City_ID], map: "City_ID")
+  @@index([Company_ID], map: "Company_ID")
+}
+
+model job_major {
+  ID       Int    @id @default(autoincrement())
+  Job_ID   Int?
+  Major_ID Int?
+  Point    Int?
+  job      job?   @relation(fields: [Job_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "job_major_ibfk_1")
+  major    major? @relation(fields: [Major_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "job_major_ibfk_2")
+
+  @@index([Job_ID], map: "Job_ID")
+  @@index([Major_ID], map: "Major_ID")
+}
+
+model major {
+  ID        Int         @id @default(autoincrement())
+  Name      String?     @db.VarChar(100)
+  job_major job_major[]
+}
+
+model role {
+  ID   Int    @id @default(autoincrement())
+  Name String @unique(map: "Name") @db.VarChar(20)
+  user user[]
+}
+
+model user {
+  ID            Int             @id @default(autoincrement())
+  Username      String          @unique(map: "Username") @db.VarChar(45)
+  Password      String          @db.VarChar(200)
+  RegisterDate  DateTime?       @db.Date
+  UserRole_ID   Int?
+  IsDeleted     Boolean         @default(false)
+  refresh_token String?         @db.VarChar(255)
+  administrator administrator[]
+  candidate     candidate[]
+  company       company[]
+  role          role?           @relation(fields: [UserRole_ID], references: [ID], onDelete: NoAction, onUpdate: NoAction, map: "user_ibfk_1")
+
+  @@index([UserRole_ID], map: "UserRole_ID")
+}
