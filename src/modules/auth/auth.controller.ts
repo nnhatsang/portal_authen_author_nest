@@ -1,26 +1,19 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
-  Delete,
-  UsePipes,
-  ValidationPipe,
-  UseGuards,
-  createParamDecorator,
-  ExecutionContext,
+  Controller,
+  Post,
   Req,
+  UseGuards,
+  UsePipes,
+  ValidationPipe
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+import JwtRefreshGuard from './auth.guard.access';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
 import { LoginUserDto } from './dto/login.dto';
-import { AuthGuard } from '@nestjs/passport';
-import { JwtGuard } from '../users/users.controller';
-import { Request } from 'express';
-import { RefreshTokenGuard } from './auth.guard.access';
+import { RefreshTokenStrategy } from './strategy/refreshToken.strategy';
 
 // export const User = createParamDecorator(
 //   (data: string, ctx: ExecutionContext) => {
@@ -32,7 +25,10 @@ import { RefreshTokenGuard } from './auth.guard.access';
 // );
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private jwtSer: JwtService,
+  ) {}
 
   @Post('login')
   @UsePipes(ValidationPipe)
@@ -44,13 +40,22 @@ export class AuthController {
   async regisCandidate(@Body() registerDto: CreateAuthDto) {
     return this.authService.signUp(registerDto);
   }
-    // @JwtGuard
-    @UseGuards(RefreshTokenGuard)
-  @Post('refresh-token')  
-refreshAccessToken(@Req() request: Request) {
-        const username = (request.user as any).username;
-        const key = (request.user as any).key;
+  // @JwtGuard
+  @UseGuards(RefreshTokenStrategy)
+  @Post('refresh-token')
+  refreshAccessToken(@Req() request: Request) {
+    const token = request.headers.authorization?.split(' ')[1];
 
-    return this.authService.refreshToken(username, key);
+    if (!token) {
+      throw new Error('Authorization token is missing or invalid.');
+    }
+
+    const { username, key } = this.jwtSer.decode(token) ?? {};
+
+    if (!username || !key) {
+      throw new Error('Token payload is invalid.');
+    }
+
+    return this.authService.refreshAccessToken(username, key);
   }
 }
