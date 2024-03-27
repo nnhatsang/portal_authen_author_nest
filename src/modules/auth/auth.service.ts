@@ -20,7 +20,7 @@ export class AuthService {
     private usersService: UsersService,
     public jwtService: JwtService,
     private configService: ConfigService,
-  ) {}
+  ) { }
   prisma = new PrismaClient();
 
   async login(loginDto: LoginUserDto): Promise<any> {
@@ -53,13 +53,14 @@ export class AuthService {
       key,
     };
     const refresh_token = await this.jwtService.sign(payload, {
-      expiresIn: '120s',
+      expiresIn: '7d',
       privateKey: this.configService.get('JWT_REFRESH_TOKEN_SECRET'),
     });
+    // const hashToken = await argon.hash(refresh_token);
     await this.usersService.updateUserToken(refresh_token, user.ID);
 
     const access_token = this.jwtService.sign(payload, {
-      expiresIn: '60s',
+      expiresIn: '10s',
       privateKey: this.configService.get('JWT_ACCESS_TOKEN_SECRET'),
     });
     const data = {
@@ -75,7 +76,7 @@ export class AuthService {
     return ResponseData(201, 'login success', data);
   }
   async refreshAccessToken(username: string, key: number): Promise<any> {
-     if (!username || !key)
+    if (!username || !key)
       throw new HttpException('Token không hợp lệ', HttpStatus.BAD_REQUEST);
 
     const user = await this.prisma.user.findFirst({
@@ -98,7 +99,7 @@ export class AuthService {
       }
     }
 
-    const decodeRefreshToken = this.jwtService.decode(refreshToken) as any; 
+    const decodeRefreshToken = this.jwtService.decode(refreshToken) as any;
     if (!decodeRefreshToken || decodeRefreshToken.key !== key) {
       throw new HttpException('Key không đúng', HttpStatus.BAD_REQUEST);
     }
@@ -119,7 +120,7 @@ export class AuthService {
     };
 
     const access_token = this.jwtService.sign(payload, {
-      expiresIn: '60s',
+      expiresIn: '10s',
       secret: this.configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
     });
 
@@ -133,7 +134,8 @@ export class AuthService {
       },
     };
 
-    return { statusCode: 201, message: 'Refresh token thành công', data };
+    return ResponseData(201, 'refresh success', data);
+    // return { status: 201, message: 'Refresh token thành công', data };
   }
 
   async signUp(registerDto: CreateAuthDto) {

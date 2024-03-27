@@ -28,7 +28,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private jwtSer: JwtService,
-  ) {}
+  ) { }
 
   @Post('login')
   @UsePipes(ValidationPipe)
@@ -45,9 +45,9 @@ export class AuthController {
   @Post('refresh-token')
   refreshAccessToken(@Req() request: Request) {
     const token = request.headers.authorization?.split(' ')[1];
-
     if (!token) {
-      throw new Error('Authorization token is missing or invalid.');
+      return
+      // throw new Error('Authorization token is missing or invalid.');
     }
 
     const { username, key } = this.jwtSer.decode(token) ?? {};
